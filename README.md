@@ -24,24 +24,31 @@
 
 ## 快速开始
 
+### 一行命令安装（推荐）
+
 ```bash
-# 1. 克隆
+npx netease-music-skills
+```
+
+这会自动把 ncm-cli-setup 和 music-curator 安装到 `~/.claude/skills/`。
+
+### 或手动克隆
+
+```bash
 git clone https://github.com/KinoJian/netease-music-skills.git
 cd netease-music-skills
-
-# 2. 安装技能（macOS/Linux 用 ln -s，Windows 用 cp -r）
 ln -s "$(pwd)/skills/ncm-cli-setup" ~/.claude/skills/ncm-cli-setup
 ln -s "$(pwd)/skills/music-curator" ~/.claude/skills/music-curator
+```
 
-# 3. 一键安装 ncm-cli + mpv（在 Claude Code 中输入 /ncm-cli-setup）或手动：
+### 初始化配置
+
+```bash
+# 安装 ncm-cli（或输入 /ncm-cli-setup 让技能引导安装）
 npm install -g @music163/ncm-cli
 ncm-cli config set appId <AppId>
 ncm-cli config set privateKey <PrivateKey>
 ncm-cli login --background
-
-# 4. 同步红心歌单
-export NCM_LIKED_PLAYLIST_ID="你的红心歌单ID(32位hex)"
-python tools/sync.py
 ```
 
 ---
