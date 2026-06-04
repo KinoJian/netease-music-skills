@@ -1,11 +1,19 @@
 {
   "name": "netease-music-skills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "网易云音乐 Claude Code 技能 — 红心歌单标签管理与 MusicBrainz 自动标注",
   "license": "Apache-2.0",
   "author": "KinoJian",
   "repository": "github:KinoJian/netease-music-skills",
-  "keywords": ["claude-code", "skills", "netease-music", "netease-cloud-music", "ncm-cli", "music-tagging", "musicbrainz"],
+  "keywords": [
+    "claude-code",
+    "skills",
+    "netease-music",
+    "netease-cloud-music",
+    "ncm-cli",
+    "music-tagging",
+    "musicbrainz"
+  ],
   "bin": {
     "install-netease-music-skills": "./install.js"
   },
