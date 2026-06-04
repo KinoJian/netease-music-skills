@@ -9,6 +9,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# NetEase official skills (install via: npx skills add https://github.com/NetEase/skills)
+skills/netease-music-assistant/
+skills/netease-music-cli/
+
 # Claude Code local settings
 .claude/
 
