@@ -1,7 +1,7 @@
 {
   "name": "netease-music-skills",
   "version": "1.0.0",
-  "description": "网易云音乐 Claude Code 技能包 — ncm-cli 一键安装 + 红心歌单标签管理与搜索",
+  "description": "网易云音乐 Claude Code 技能 — 红心歌单标签管理与 MusicBrainz 自动标注",
   "license": "Apache-2.0",
   "author": "KinoJian",
   "repository": "github:KinoJian/netease-music-skills",
@@ -11,7 +11,6 @@
   },
   "files": [
     "install.js",
-    "skills/ncm-cli-setup/",
     "skills/music-curator/",
     "tools/sync.py",
     "tools/tag.py",
