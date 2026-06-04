@@ -13,7 +13,11 @@
     "install.js",
     "skills/ncm-cli-setup/",
     "skills/music-curator/",
-    "tools/",
+    "tools/sync.py",
+    "tools/tag.py",
+    "tools/batch_tag.py",
+    "tools/musicbrainz.py",
+    "tools/init_db.py",
     "README.md",
     "LICENSE"
   ]

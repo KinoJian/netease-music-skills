@@ -1,0 +1,28 @@
+# Personal data (ALWAYS exclude, even if .gitignore is ignored by npm)
+tools/songs_db.json
+tools/.mb_cache.json
+*.db
+*.cache
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Dev / IDE
+.claude/
+.vscode/
+.idea/
+.git/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NetEase official skills (install separately)
+skills/netease-music-assistant/
+skills/netease-music-cli/
+
+# Git
+.gitignore
+.npmignore
