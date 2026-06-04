@@ -1,9 +1,9 @@
 ---
 name: music-curator
 description: >
-  网易云音乐智能策展助手。双模式搜索（本地标签库 + 全网易云发现）、
-  歌曲标签管理（MusicBrainz + AI分析）、红心歌单同步。
-  触发：用户想找歌、推荐歌、管理音乐收藏、分析歌曲风格时。
+  网易云音乐智能策展助手。三模式搜索（本地标签库 + 网易云全站 + RYM风格库反向挖掘）、
+  歌曲标签管理（MusicBrainz + qiaomu 5947风格DB + AI推理）、红心歌单同步。
+  触发：用户想找歌、推荐歌、管理音乐收藏、分析歌曲风格、探索新音乐类型时。
 ---
 
 # 音乐策展助手 (Music Curator)
@@ -277,6 +277,80 @@ ncm-cli search playlist --keyword "art blakey jazz messengers"
   → genre_db.py lookup "Dark Jazz" → 描述 + 子分类
   → 推荐艺人/歌单（模型知识 + 搜索）
 ```
+
+---
+
+## 流程 E：RYM 风格库反向挖掘
+
+当用户通过 qiaomu 找到精准风格分类后，直接去 RYM 拿该风格的标志性艺人和专辑，再去网易云搜索。
+
+### E1. 获取 RYM 风格页信息
+
+```
+qiaomu genre DB → 风格名 + URL
+  → RYM 风格页 (https://rateyourmusic.com/genre/<slug>/)
+  → Top 艺人 / Top 专辑 / 子分类
+  → 提取 3-8 个代表艺人 + 代表专辑
+```
+
+> RYM 网站可能不可达时，用模型对经典风格的已知知识补充（如 Cocteau Twins 是 Ethereal Wave 的定义者）。
+
+### E2. 网易云交叉搜索
+
+用 RYM 拿到的艺人名/专辑名去网易云搜索：
+
+```bash
+ncm-cli search album --keyword "Cocteau Twins"
+ncm-cli search song --keyword "Dead Can Dance"
+```
+
+### E3. 输出 + 可选入库
+
+- 展示网易云上已有的专辑/歌曲链接
+- 用户可选择加红心
+- 新发现的歌打上对应流派标签入库
+
+### 示例：Ethereal Wave 掘金
+
+```
+用户：「Ethereal Wave 有什么」
+  → qiaomu: "Atmospheric guitar & synth, soprano vocals, surreal"
+  → RYM Top: Cocteau Twins, Dead Can Dance, This Mortal Coil
+  → 网易云搜 → 8 张专辑全部可听
+  → 输出链接 + 可选加红心
+```
+
+---
+
+## 输出格式规范（重要！）
+
+### 禁止使用表格推荐歌曲
+
+**表格在中英文混排时列对齐不可靠**，复制到微信/飞书/记事本会错位。推荐结果统一用以下格式：
+
+```
+🎧 艺人名 — 一句话说明
+   专辑/歌曲名  🔗 https://music.163.com/#/album?id=xxxxx
+   专辑/歌曲名  🔗 https://music.163.com/#/song?id=xxxxx
+```
+
+### 每条推荐必须包含
+
+1. 歌名/专辑名
+2. 艺人名
+3. 可点击链接（明文 originalId）
+4. 简短的理由（1 句话）
+
+### 链接规则
+
+```
+https://music.163.com/#/song?id=<明文数字ID>
+https://music.163.com/#/playlist?id=<明文数字ID>
+https://music.163.com/#/album?id=<明文数字ID>
+https://music.163.com/#/artist?id=<明文数字ID>
+```
+
+> **禁止使用加密 ID（32位 hex）拼链接。**
 
 ---
 
