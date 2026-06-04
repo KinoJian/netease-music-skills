@@ -1,6 +1,6 @@
 {
   "name": "netease-music-skills",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "网易云音乐 Claude Code 技能 — 红心歌单标签管理与 MusicBrainz 自动标注",
   "license": "Apache-2.0",
   "author": "KinoJian",
