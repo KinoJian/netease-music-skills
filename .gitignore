@@ -1,0 +1,21 @@
+# Personal data
+tools/songs_db.json
+tools/.mb_cache.json
+*.db
+*.cache
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude Code local settings
+.claude/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
