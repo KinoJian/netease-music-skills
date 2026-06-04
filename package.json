@@ -24,6 +24,7 @@
     "tools/tag.py",
     "tools/batch_tag.py",
     "tools/musicbrainz.py",
+    "tools/genre_db.py",
     "tools/init_db.py",
     "README.md",
     "LICENSE"

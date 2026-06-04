@@ -17,6 +17,13 @@ description: >
 | `tools/tag.py` | 标签管理：增删查改 |
 | `tools/batch_tag.py` | 批量标注：全量 MusicBrainz 查询 |
 | `tools/musicbrainz.py` | MusicBrainz API + 30 天缓存 |
+| `tools/genre_db.py` | 风格数据库（qiaomu/RateYourMusic 5947 条） |
+
+> **依赖**：`genre_db.py` 需要先安装 `qiaomu-music-player-spotify` 技能获取风格数据：
+> ```bash
+> npx qiaomu-music-player-spotify
+> ```
+> 仅需风格 DB（`~/.claude/skills/qiaomu-music-player-spotify/references/`），不需要 Spotify API。
 
 ---
 
@@ -210,6 +217,68 @@ python tools/tag.py add "歌名" --tags "情绪:浪漫, 流派:波萨诺瓦, 器
 ```
 
 同一分类下的标签自动替换旧值。
+
+---
+
+## 流程 D：风格数据库查询与标签增强
+
+利用 qiaomu 技能的 5947 条 RateYourMusic 风格数据库，增强标签质量和搜索能力。
+
+### D1. 风格查询
+
+```bash
+# 查看风格详情（英文名）
+python tools/genre_db.py lookup "Hard Bop"
+# → 返回：描述、父分类、子分类、RYM链接
+
+# 查看某分类下的所有子风格
+python tools/genre_db.py children "Jazz"
+# → 返回 38 个爵士子分类及描述
+
+# 中文标签 → 英文风格匹配
+python tools/genre_db.py match "硬波普"
+# → 返回：RYM 中的对应风格、描述、连接
+```
+
+### D2. 搜索关键词扩展
+
+当标签搜索返回结果少时，用 genre_db 扩展搜索词：
+
+```bash
+# 中文标签 → 一组英文/中文搜索关键词
+python tools/genre_db.py expand "硬波普"
+# → ["hard bop", "bebop", "bluesy jazz", "saxophone jazz", "art blakey", ...]
+```
+
+然后用这些关键词去 ncm-cli 做全局搜索：
+
+```bash
+ncm-cli search playlist --keyword "hard bop saxophone jazz"
+ncm-cli search playlist --keyword "art blakey jazz messengers"
+```
+
+### D3. 标签增强写入
+
+对于已有「流派」标签的歌曲，用 genre_db 补充：
+
+1. **查风格描述** → 写入 DB 的注释字段或作为展示用
+2. **补充英文风格名** → `流派:Hard Bop` 追加到中文标签旁
+3. **关联子风格** → 如果 RYM 有子分类，补充为候选标签
+4. **未匹配标签也要保留** → `爆裂爵士` 是个人理解，虽然 RYM 没有，但它描述了你对 SOIL & "PIMP" SESSIONS 的感受，不删除
+
+### D4. 风格浏览发现
+
+当用户想拓展音乐视野时：
+
+```
+用户：「爵士下面有什么分支？我想发现新类型」
+  → genre_db.py children "Jazz" → 列出 38 个子分类
+  → 用户选「Dark Jazz 是什么样的？」
+  → genre_db.py lookup "Dark Jazz" → 描述 + 子分类
+  → 推荐艺人/歌单（模型知识 + 搜索）
+```
+
+---
 
 ### C3. 批量打标签
 
