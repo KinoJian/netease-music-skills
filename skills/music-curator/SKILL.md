@@ -50,11 +50,76 @@ python tools/tag.py list --tag "动漫OST"               # 按标签列
 python tools/tag.py tags                                # 标签统计
 ```
 
-### A2. 人工补充
+### A2. 标签稀疏 → 推理发现闭环
 
-MusicBrainz 覆盖了流派/年代/来源，但情绪/氛围/器乐标签较少。搜索时需结合对歌单的已知知识手动补充高质量结果。
+**触发条件**：标签搜索返回 < 3 条结果时，说明标签库对该维度覆盖不足，**不允许直接结束**，必须进入以下闭环：
+
+```
+标签搜索（结果<3）→ 多维度推理发现 → 标签补全 → 重新搜索验证
+```
+
+#### A2a. 多维度推理发现
+
+不依赖现有标签，用以下信号在本地 DB 中推理候选歌曲：
+
+```
+维度1: 艺人背景
+   已知萨克斯主导的艺人/乐队：
+     John Coltrane、SOIL & "PIMP" SESSIONS、BLU-SWING、JABBERLOOP、
+     Spyro Gyra、椎名林檎(+SOIL)
+   已知钢琴主导：Bill Evans、Ahmad Jamal、広橋真紀子
+   已知吉他主导：Cory Wong、Andy McKee、Polyphia
+
+维度2: 风格/流派推理
+   硬波普(hard bop) → 萨克斯标志主奏
+   爆裂爵士(death jazz) → 萨克斯+激进鼓
+   爵士嘻哈(jazz hip-hop) → 萨克斯+采样
+   后摇(post-rock) → 吉他主导
+   氛围(ambient) → 合成器/电子
+
+维度3: 器乐来源推断
+   来源:器乐演奏 + 地域:日本 + 爵士风格 → 大概率萨克斯/钢琴
+   来源:动漫OST + 器乐演奏 → 大概率钢琴/弦乐
+
+维度4: 歌名/专辑关键词
+   sax、saxophone、萨克斯、bop、swing、big band
+```
+
+#### A2b. 标签补全（直接写 DB）
+
+推理出候选人后，**直接操作 JSON 补全标签**（不经过 tag.py 的替换逻辑，保证多值追加）：
+
+```python
+# 示例：给 Coltrane 歌曲追加器乐:萨克斯 + 子流派
+python -c "
+import json
+with open('tools/songs_db.json') as f:
+    db = json.load(f)
+for s in db['songs']:
+    if 'John Coltrane' in str(s['artists']):
+        # 追加而非替换
+        for t in ['器乐:萨克斯', '流派:硬波普', '流派:莫代尔爵士']
+            if t not in s['tags']:
+                s['tags'].append(t)
+...
+"
+```
+
+#### A2c. 重新搜索验证
+
+补全后重新 `tag.py search`，确认搜索结果 ≥3 条，再将结果输出给用户。
 
 ---
+
+### A3. 结构化搜索
+
+```bash
+python tools/tag.py search "流派:爵士 器乐:钢琴"
+python tools/tag.py search "情绪:浪漫 氛围:夜晚"
+python tools/tag.py search "钢琴 古典"               # 模糊搜索
+python tools/tag.py list --tag "动漫OST"               # 按标签列
+python tools/tag.py tags                                # 标签统计
+```
 
 ## 流程 B：全局发现搜索
 
@@ -167,17 +232,52 @@ python tools/tag.py show "关键词" --mb    # 含 MusicBrainz
 
 ### 格式：`分类:值`
 
-| 分类 | 示例 | 来源 |
-|------|------|------|
-| `情绪:` | 浪漫, 梦幻, 慵懒, 温暖 | 用户 → AI |
-| `流派:` | 爵士, 古典, 电子, 灵魂 | MusicBrainz |
-| `器乐:` | 钢琴, 萨克斯, 人声, 弦乐 | 用户 → AI |
-| `氛围:` | 夜晚, 水边, 宫廷风, 电影感 | 用户 → AI |
-| `节奏:` | 中慢速, 中快速, 摇摆律动 | 用户 / 推理 |
-| `年代:` | 2020s, 1998s | MusicBrainz |
-| `来源:` | 动漫OST, 电影OST, 器乐演奏 | MusicBrainz + 推理 |
-| `地域:` | 日本, 华语 | 推理 |
-| `风格:` | jazz-funk, ambient, post-rock | MusicBrainz 原始 |
+| 分类 | 示例 | 来源 | 写入策略 |
+|------|------|------|----------|
+| `流派:` | 硬波普, 爆裂爵士, 爵士嘻哈 | MusicBrainz + 推理 | **追加** — 一首歌可有多个子流派 |
+| `器乐:` | 钢琴, 萨克斯, 人声, 弦乐 | 用户 + AI | **追加** — 一首歌可有多种乐器 |
+| `情绪:` | 浪漫, 梦幻, 慵懒, 温暖 | 用户 → AI | **替换** — 同一时段主导情绪只有一个 |
+| `氛围:` | 夜晚, 水边, 爵士酒吧, 都市夜 | 用户 → AI | **追加** — 可同时适配多个场景 |
+| `节奏:` | 中慢速, 中快速, 摇摆律动 | 用户 / 推理 | **替换** — 一首歌只有一个主节奏 |
+| `风格:` | jazz-funk, ambient, post-rock | MusicBrainz 原始 | **追加** — MB 英文标签原样保留 |
+| `年代:` | 2020s, 1998s | MusicBrainz | **替换** |
+| `来源:` | 动漫OST, 电影OST, 器乐演奏 | MusicBrainz + 推理 | **追加** |
+| `地域:` | 日本, 华语 | 推理 | **替换** |
+
+### 标签写入策略（重要！）
+
+**追加 vs 替换**：
+- 多值维度（`流派`、`器乐`、`氛围`、`来源`、`风格`）→ **追加**，直接用 Python 操作 JSON
+- 单值维度（`情绪`、`节奏`、`年代`、`地域`）→ **替换**，可用 `tag.py add`
+
+**流派必须细化到子分类**，禁止只写"爵士"：
+
+| 泛标签 ❌ | 细化标签 ✅ | 说明 |
+|-----------|------------|------|
+| 流派:爵士 | 流派:硬波普 | 50s末兴起的蓝调+波普，萨克斯主导 |
+| | 流派:莫代尔爵士 | 基于音阶而非和弦进行，Coltrane标志 |
+| | 流派:爆裂爵士 | 日本地下，高速+激进+萨克斯咆哮 |
+| | 流派:爵士嘻哈 | 爵士采样+嘻哈鼓点，Nujabes/JABBERLOOP |
+| | 流派:爵士流行 | 流行结构+爵士编曲，BLU-SWING |
+| | 流派:融合爵士 | 爵士+摇滚/放克，Spyro Gyra |
+| | 流派:灵魂爵士 | 福音+蓝调+硬波普 |
+| | 流派:平滑爵士 | 商业化器乐流行爵士 |
+| | 流派:酸性爵士 | 电子+放克+爵士 |
+| | 流派:自由爵士 | 无调性即兴，Coltrane晚期 |
+
+**标签可附带简短说明**：写入时用分类:值格式，但在向用户展示时可以用自然语言解释标签含义。
+
+### `tag.py` 命令行
+
+```bash
+python tools/tag.py search "流派:爆裂爵士"            # 搜子流派
+python tools/tag.py search "流派:爵士嘻哈 器乐:萨克斯"   # 组合搜索
+python tools/tag.py tags                              # 标签统计
+python tools/tag.py list --tag "流派:硬波普"            # 按标签列出歌曲
+python tools/tag.py show "歌名" --mb                   # 歌曲详情+MusicBrainz
+```
+
+> **注意**：`tag.py add` 会替换同分类下的旧值，多值标签（流派/器乐/氛围）请直接操作 JSON 追加。
 
 ### 标签分级
 
